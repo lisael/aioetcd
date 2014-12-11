@@ -124,6 +124,21 @@ class Client:
 
     @asyncio.coroutine
     def watch(self, key, index=None, timeout=None):
+        """
+        Blocks until a new event has been received, starting at index 'index'
+        :param str key:  key to watch
+        :param int index: Index to start from. if None, start from current
+            index
+        :param timeout:  max seconds to wait for a read. If None, no timeout,
+            blocks forever
+        :type timeout: int or float
+
+        :returns: client.EtcdResult
+
+        :raises KeyValue:  If the key doesn't exists.
+        :raises asyncio.TimeoutError: If timeout is reached.
+
+        """
         params = dict(wait=True)
         if index is not None:
             params['waitIndex'] = index
@@ -131,22 +146,62 @@ class Client:
             params['timeout'] = timeout
         while 42:
             try:
-                response = yield from self.read(key, **params)
+                response = yield from self.read(key, None, **params)
                 return response
             except asyncio.TimeoutError:
                 if timeout is not None:
                     raise
 
-    def add_watcher(self, key):
-        if key in watchers:
-            pass
+    def watch_forever(self, key, index=None):
+        """
+        return an iterator of self.watch() coroutines
+
+        :param str key:  key to watch
+        :param int index: (optional) Index to start from. if None, start from current
+            index
+        :raises KeyValue:  If the key doesn't exists.
+
+        :warning: internally watch_forever issues a `blocking` request if the
+            :param index: is not set. It may slow down your program. If it is
+            used intensly, consider provide an index
+
+        Usage::
+
+            >>> result = yield from client.read(key)
+            >>> index = result.modifiedIndex
+            >>> for watcher in client.watch_forever(key, index):
+            >>>     resp = yield from watcher
+            >>>     print(resp.value)
+            >>>     if resp.value == '42':
+            >>>         break
+
+        """
+        # TODO: add a timeout that raises StopIteration
+        return iter(self._watch_forever(key, index))
+
+    def _watch_forever(self, key, index=None):
+        if index is None:
+            # get current index
+            # we must use the blocking read, cause we are in a generator. Can't
+            # be a coroutine
+            result = self.read_sync(key)
+            index = result.modifiedIndex
+        while 42:
+            index += 1
+            yield self.watch(key, index)
+
+    def read_sync(self, key, **params):
+        loop = asyncio.new_event_loop()
+        return loop.run_until_complete(self.read(key, loop, **params))
 
     @asyncio.coroutine
-    def read(self, key, **params):
+    def read(self, key, loop=None, **params):
         """
         Returns the value of the key 'key'.
 
         :param str key:  Key.
+        :param loop: the event loop to use for this request. Used internally
+            for sync_read
         :param bool recursive (bool): If you should fetch recursively a dir
         :param bool wait (bool): If we should wait and return next time the
             key is changed
@@ -162,6 +217,7 @@ class Client:
             KeyValue:  If the key doesn't exists.
             asyncio.TimeoutError
         """
+        loop = loop if loop is not None else self.loop
         key = key.lstrip('/')
         timeout = params.pop('timeout', self.read_timeout)
         for (k, v) in params.items():
@@ -170,9 +226,9 @@ class Client:
             else:
                 params[k] = v
         response = yield from self._get("/v2/keys/%s" % key,
-                params=params, timeout=timeout)
+                params=params, timeout=timeout, loop=loop)
         # TODO: substract current time from timeout
-        result = yield from self._result_from_response(response, timeout)
+        result = yield from self._result_from_response(response, timeout, loop)
         return result
 
     @asyncio.coroutine
@@ -213,11 +269,11 @@ class Client:
         return result
 
     @asyncio.coroutine
-    def _result_from_response(self, response, timeout=None):
+    def _result_from_response(self, response, timeout=None, loop=None):
         """ Creates an EtcdResult from json dictionary """
         if timeout is None:
             timeout = self.read_timeout
-        data = yield from asyncio.wait_for(response.text(), timeout)
+        data = yield from asyncio.wait_for(response.text(), timeout, loop=loop)
         try:
             res = json.loads(data)
             r = aioetcd.EtcdResult(**res)
@@ -230,8 +286,8 @@ class Client:
                 'Unable to decode server response: %s' % e)
 
     @asyncio.coroutine
-    def _get(self, path, params=None, timeout=None):
-        resp = yield from self._execute('get', path, params, timeout)
+    def _get(self, path, params=None, timeout=None, loop=None):
+        resp = yield from self._execute('get', path, params, timeout, loop)
         return resp
 
     @asyncio.coroutine
@@ -250,15 +306,15 @@ class Client:
         return resp
 
     @asyncio.coroutine
-    def _execute(self, method, path, params=None, timeout=None):
+    def _execute(self, method, path, params=None, timeout=None, loop=None):
         if timeout is None:
             timeout = self.read_timeout
         failed = False
-        # TODO: whatif self._machine_cache is empty ?
+        # TODO: whatif self._machines_cache is empty ?
         for idx, uri in enumerate(self._machines_cache):
             try:
                 resp = yield from asyncio.wait_for(
-                        aiohttp.request(method, uri + path, params=params), timeout)
+                        aiohttp.request(method, uri + path, params=params, loop=loop), timeout, loop=loop)
                 if failed:
                     self._machine_cache = self._machine_cache[idx:]
                     if not self._cache_update_scheduled:
