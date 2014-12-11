@@ -7,7 +7,7 @@ asyncio version of https://github.com/jplana/python-etcd
 
 Only coroutines-based at the moment, I plan to add some callback-style async
 (actually, I hate callback style, but sometimes, in python  there is no other
-issue)
+way)
 
 install etcd and etcdctl ( https://github.com/coreos/etcd/blob/master/README.md )
 
