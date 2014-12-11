@@ -27,6 +27,6 @@ and in another terminal, run:
 etcdctl set hello 42
 ```
 
-to unlock the watch_eternally() in the exanple script.
+to unlock the watch_eternally() in the example script.
 
 Play, fork, hack and, most important, have fun!
