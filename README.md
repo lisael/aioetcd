@@ -9,13 +9,15 @@ Only coroutines-based at the moment, I plan to add some callback-style async
 (actually, I hate callback style, but sometimes, in python  there is no other
 way)
 
+## Quick start
+
 install etcd and etcdctl ( https://github.com/coreos/etcd/blob/master/README.md )
 
 ```
 etcd &
 etcdctl set hop 42
 git clone https://github.com/lisael/aioetcd.git
-mkvirtualenv --python=python3.4
+virtualenv --python=python3.4 aioetcd
 cd aioetcd
 pip install .
 python3.4 example/test_client.py 
