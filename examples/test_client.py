@@ -47,7 +47,8 @@ def watch_timeout(key):
 def watch_forever(key):
     print('watch_forever')
     client = aioetcd.client.Client(read_timeout=5, allow_reconnect=True)
-    for watcher in client.watch_forever(key):
+    it = yield from client.watch_iterator(key)
+    for watcher in it:
         resp = yield from watcher
         print(resp.value)
         if resp.value == '42':
