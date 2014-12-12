@@ -152,7 +152,8 @@ class Client:
                 if timeout is not None:
                     raise
 
-    def watch_forever(self, key, index=None):
+    @asyncio.coroutine
+    def watch_iterator(self, key, index=None):
         """
         return an iterator of self.watch() coroutines
 
@@ -161,15 +162,10 @@ class Client:
             index
         :raises KeyValue:  If the key doesn't exists.
 
-        :warning: internally watch_forever issues a `blocking` request if the
-            :param index: is not set. It may slow down your program. If it is
-            used intensly, consider provide an index
-
         Usage::
 
-            >>> result = yield from client.read(key)
-            >>> index = result.modifiedIndex
-            >>> for watcher in client.watch_forever(key, index):
+            >>> wi = yield from client.watch_iterator(key)
+            >>> for watcher in wi:
             >>>     resp = yield from watcher
             >>>     print(resp.value)
             >>>     if resp.value == '42':
@@ -177,9 +173,14 @@ class Client:
 
         """
         # TODO: add a timeout that raises StopIteration
+        if index is None:
+            result = yield from self.read(key)
+            index = result.modifiedIndex
         return iter(self._watch_forever(key, index))
 
-    def _watch_forever(self, key, index=None):
+    def _watch_forever(self, key, index=None, timeout=None):
+        import time
+        start = time.time()
         if index is None:
             # get current index
             # we must use the blocking read, cause we are in a generator. Can't
