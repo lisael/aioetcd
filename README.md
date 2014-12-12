@@ -27,9 +27,9 @@ and in another terminal, run:
 etcdctl set hello 0 # a couple of time and then
 etcdctl set hello 42 # as soon as it becomes boring
 etcdctl set hello 42 # or wait 5 seconds to unlock
-# read the script to see what's going on
 ```
 
-to unlock the watch_eternally() coroutine in the example script.
+(read the script to see what's going on)
+
 
 Play, fork, hack and, most important, have fun!
