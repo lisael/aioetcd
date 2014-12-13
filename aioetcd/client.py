@@ -182,12 +182,6 @@ class Client:
         return iter(self._watch_forever(key, index))
 
     def _watch_forever(self, key, index=None, timeout=None):
-        if index is None:
-            # get current index
-            # we must use the blocking read, cause we are in a generator. Can't
-            # be a coroutine
-            result = self.read_sync(key)
-            index = result.modifiedIndex
         while 42:
             index += 1
             yield self.watch(key, index)
