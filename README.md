@@ -20,7 +20,7 @@ git clone https://github.com/lisael/aioetcd.git
 virtualenv --python=python3.4 aioetcd
 cd aioetcd
 pip install .
-python3.4 example/test_client.py 
+python3.4 example/simple_client.py 
 ```
 
 and in another terminal, run:
