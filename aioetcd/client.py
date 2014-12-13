@@ -221,8 +221,9 @@ class Client:
                 params[k] = v and "true" or "false"
             else:
                 params[k] = v
-        response = yield from self._get("/v2/keys/%s" % key,
-                params=params, timeout=timeout, loop=loop)
+        response = yield from self._get(
+            "/v2/keys/%s" % key, params=params, timeout=timeout, loop=loop
+        )
         # TODO: substract current time from timeout
         result = yield from self._result_from_response(response, timeout, loop)
         return result
@@ -238,10 +239,14 @@ class Client:
         :param int ttl:  Time in seconds of expiration (optional).
         :param bool dir: Set to true if we are writing a directory; default is
             false.
-        :param bool append: If true, it will post to append the new value to the dir, creating a sequential key. Defaults to false.
-        :param str prevValue: compare key to this value, and swap only if corresponding (optional).
-        :param int prevIndex: modify key only if actual modifiedIndex matches the provided one (optional).
-        :param bool prevExist: If false, only create key; if true, only update key.
+        :param bool append: If true, it will post to append the new value to
+            the dir, creating a sequential key. Defaults to false.
+        :param str prevValue: compare key to this value, and swap only if
+            corresponding (optional).
+        :param int prevIndex: modify key only if actual modifiedIndex matches
+            the provided one (optional).
+        :param bool prevExist: If false, only create key; if true, only update
+            key.
 
         Returns:
             client.EtcdResult
@@ -310,7 +315,11 @@ class Client:
         for idx, uri in enumerate(self._machines_cache):
             try:
                 resp = yield from asyncio.wait_for(
-                        aiohttp.request(method, uri + path, params=params, loop=loop), timeout, loop=loop)
+                    aiohttp.request(
+                        method, uri + path, params=params, loop=loop
+                    ),
+                    timeout, loop=loop
+                )
                 if failed:
                     self._machine_cache = self._machine_cache[idx:]
                     if not self._cache_update_scheduled:
@@ -320,4 +329,3 @@ class Client:
             except asyncio.TimeoutError:
                 failed = True
         raise asyncio.TimeoutError()
-

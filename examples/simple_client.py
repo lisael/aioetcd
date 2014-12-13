@@ -1,12 +1,14 @@
 import asyncio
 import aioetcd.client
 
+
 @asyncio.coroutine
 def print_leader():
     print('print_leader')
     client = aioetcd.client.Client()
     result = yield from client.leader()
     print(result)
+
 
 @asyncio.coroutine
 def client_set(key, value):
@@ -15,12 +17,14 @@ def client_set(key, value):
     result = yield from client.set(key, value)
     print(result)
 
+
 @asyncio.coroutine
 def client_get(key):
     print('client_get')
     client = aioetcd.client.Client()
     result = yield from client.get(key)
     print(result)
+
 
 @asyncio.coroutine
 def print_machines():
@@ -29,6 +33,7 @@ def print_machines():
     result = yield from client.machines()
     print(result)
 
+
 @asyncio.coroutine
 def watch_eternally(key):
     print('watch_eternally')
@@ -36,12 +41,14 @@ def watch_eternally(key):
     result = yield from client.watch(key)
     print(result)
 
+
 @asyncio.coroutine
 def watch_timeout(key):
     print('watch_timeout')
     client = aioetcd.client.Client(read_timeout=2, allow_reconnect=True)
     result = yield from client.watch(key, timeout=5)
     print(result)
+
 
 @asyncio.coroutine
 def watch_forever(key):
@@ -54,9 +61,9 @@ def watch_forever(key):
         if resp.value == '42':
             break
 
+
 @asyncio.coroutine
 def main():
-    loop = asyncio.get_event_loop()
     print('---------------------')
     yield from print_leader()
     print('---------------------')
@@ -86,5 +93,3 @@ def main():
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
 loop.close()
-
-

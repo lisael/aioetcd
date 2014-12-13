@@ -1,5 +1,6 @@
 # copied from https://github.com/jplana/python-etcd
 
+
 class EtcdResult:
     _node_props = {
         'key': None,
@@ -34,7 +35,8 @@ class EtcdResult:
 
         if prevNode:
             self._prev_node = EtcdResult(None, node=prevNode)
-            # See issue 38: when returning a write() op etcd has a bogus result.
+            # See issue 38: when returning a write() op etcd has a bogus
+            # result.
             if self._prev_node.dir and not self.dir:
                 self.dir = True
 
@@ -50,13 +52,13 @@ class EtcdResult:
         :param bool leaves_only: if true, only value nodes are returned
         """
         if not self._children:
-            #if the current result is a leaf, return itself
+            # if the current result is a leaf, return itself
             yield self
             return
         for n in self._children:
             node = EtcdResult(None, n)
             if not leaves_only:
-                #Return also dirs, not just value nodes
+                # Return also dirs, not just value nodes
                 yield node
             for child in node.children:
                 yield child
@@ -126,6 +128,3 @@ class EtcdError:
             msg = "Unable to decode server response"
             exc = EtcdException
         raise exc(msg)
-
-
-
