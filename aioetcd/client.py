@@ -3,6 +3,7 @@ import aiohttp
 import asyncio
 import aioetcd
 
+
 class Client:
 
     def __init__(
@@ -33,8 +34,10 @@ class Client:
             asyncio.get_event_loop()
         """
         self.loop = loop if loop is not None else asyncio.get_event_loop()
+
         def uri(host, port):
             return '%s://%s:%d' % (protocol, host, port)
+
         if isinstance(host, tuple):
             self._machines_cache = [uri(*conn) for conn in host]
             self._base_uri = self._machines_cache[0]
@@ -158,8 +161,8 @@ class Client:
         return an iterator of self.watch() coroutines
 
         :param str key:  key to watch
-        :param int index: (optional) Index to start from. if None, start from current
-            index
+        :param int index: (optional) Index to start from. if None, start from
+            current index
         :raises KeyValue:  If the key doesn't exists.
 
         Usage::
@@ -179,8 +182,6 @@ class Client:
         return iter(self._watch_forever(key, index))
 
     def _watch_forever(self, key, index=None, timeout=None):
-        import time
-        start = time.time()
         if index is None:
             # get current index
             # we must use the blocking read, cause we are in a generator. Can't
