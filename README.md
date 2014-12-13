@@ -1,6 +1,8 @@
 aioetcd
 =======
 
+[![Build Status](https://travis-ci.org/lisael/aioetcd.svg)](https://travis-ci.org/lisael/aioetcd)
+
 Coroutine-based etcd client
 
 asyncio version of https://github.com/jplana/python-etcd 
