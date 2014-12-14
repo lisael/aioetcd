@@ -80,7 +80,8 @@ class Client:
         args)
 
         """
-        return self._write(key, value, ttl=ttl)
+        result = yield from self._write(key, value, ttl=ttl)
+        return result
 
     @asyncio.coroutine
     def delete(self, key, recursive=None, dir=None, **params):
@@ -308,6 +309,8 @@ class Client:
 
     @asyncio.coroutine
     def _execute(self, method, path, params=None, timeout=None, loop=None):
+        if loop is None:
+            loop = self.loop
         if timeout is None:
             timeout = self.read_timeout
         failed = False
