@@ -1,7 +1,7 @@
 aioetcd
 =======
 
-[![Build Status](https://travis-ci.org/lisael/aioetcd.svg)](https://travis-ci.org/lisael/aioetcd)
+[![Build Status](https://travis-ci.org/lisael/aioetcd.svg?branch=master)](https://travis-ci.org/lisael/aioetcd)
 
 Coroutine-based etcd client
 
