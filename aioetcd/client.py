@@ -107,7 +107,7 @@ class Client:
         if dir is not None:
             dir['dir'] = dir and "true" or "false"
 
-        response = self._delete("/v2/keys/%s" % key, params=params)
+        response = yield from self._delete("/v2/keys/%s" % key, params=params)
         return self._result_from_response(response)
 
     @asyncio.coroutine
@@ -304,7 +304,7 @@ class Client:
 
     @asyncio.coroutine
     def _delete(self, path, params=None, timeout=None):
-        resp = yield from self._execute('delete', path, timeout=timeout)
+        resp = yield from self._execute('delete', path, params, timeout)
         return resp
 
     @asyncio.coroutine
