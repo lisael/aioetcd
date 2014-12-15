@@ -10,7 +10,9 @@ class TestClient(unittest.TestCase):
 
 
 class EtcdError(OSError):
-    pass
+    def __init__(self, retcode, stderr):
+        OSError.__init__(self, stderr)
+        self.retcode = retcode
 
 
 class EtcdController:
@@ -28,7 +30,7 @@ class EtcdController:
         out, err = yield from proc.communicate()
         retcode = yield from proc.wait()
         if retcode:
-            raise EtcdError()
+            raise EtcdError(retcode, err.decode('ascii'))
         return out.decode('ascii').rstrip()
 
     @asyncio.coroutine
@@ -73,11 +75,22 @@ class TestRealClient(unittest.TestCase):
     def _test_set(self):
         ctl = EtcdController()
         yield from ctl.set('test1', 43)
-        yield from asyncio.sleep(0.3)
         yield from self.client.set('test1', 44)
-        yield from asyncio.sleep(0.3)
         val = yield from ctl.get('test1')
         self.assertEquals(val, '44')
 
     def test_set(self):
         self.loop.run_until_complete(self._test_set())
+
+    @asyncio.coroutine
+    def _test_delete(self):
+        ctl = EtcdController()
+        yield from ctl.set('test1', 42)
+        val = yield from self.client.get('test1')
+        self.assertEquals(val, '42')
+        yield from self.client.delete('test1')
+        with self.assertRaisesRegex(EtcdError, r'^Error:\s+100:'):
+            yield from ctl.get('test1')
+
+    def test_delete(self):
+        self.loop.run_until_complete(self._test_delete())
