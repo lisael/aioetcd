@@ -2,6 +2,7 @@ import unittest
 import asyncio
 
 from aioetcd.client import Client
+from aioetcd import EtcdException
 
 
 class TestClient(unittest.TestCase):
@@ -81,6 +82,18 @@ class TestRealClient(unittest.TestCase):
 
     def test_set(self):
         self.loop.run_until_complete(self._test_set())
+
+    @asyncio.coroutine
+    def _test_mkdir(self):
+        ctl = EtcdController()
+        dirname = 'testdir'
+        result = yield from self.client.mkdir(dirname)
+        # etcdctl has no command to show that a key is a dir
+        # it would raise if we try to make a file in a file:
+        ctl.set(dirname + '/file', 42)
+
+    def test_mkdir(self):
+        self.loop.run_until_complete(self._test_mkdir())
 
     @asyncio.coroutine
     def _test_delete(self):
