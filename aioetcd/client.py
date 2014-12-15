@@ -229,6 +229,12 @@ class Client:
         result = yield from self._result_from_response(response, timeout, loop)
         return result
 
+
+    @asyncio.coroutine
+    def mkdir(self, key):
+        resp = yield from self._write(key, None, dir=True)
+        return resp
+
     @asyncio.coroutine
     def _write(self, key, value, append=False, **params):
         """
@@ -253,16 +259,18 @@ class Client:
             client.EtcdResult
         """
         key = key.lstrip('/')
-        params = {}
+        #params = {}
         if value is not None:
             params['value'] = value
         if params.get('dir', False):
             if value:
                 raise aioetcd.EtcdException(
                     'Cannot create a directory with a value')
-        for (k, v) in params.items():
+        for (k, v) in list(params.items()):
             if type(v) == bool:
                 params[k] = v and "true" or "false"
+            elif v is None:
+                del params[k]
 
         method = append and self._post or self._put
         path = "/v2/keys/%s" % key
@@ -285,7 +293,8 @@ class Client:
             return r
         except Exception as e:
             raise aioetcd.EtcdException(
-                'Unable to decode server response: %s' % e)
+                'Unable to decode server response: %s\n\nData was: %s' %
+                (e, data))
 
     @asyncio.coroutine
     def _get(self, path, params=None, timeout=None, loop=None):
