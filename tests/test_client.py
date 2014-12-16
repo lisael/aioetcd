@@ -2,7 +2,6 @@ import unittest
 import asyncio
 
 from aioetcd.client import Client
-from aioetcd import EtcdException
 
 
 class TestClient(unittest.TestCase):
@@ -87,7 +86,7 @@ class TestRealClient(unittest.TestCase):
     def _test_mkdir(self):
         ctl = EtcdController()
         dirname = 'testdir'
-        result = yield from self.client.mkdir(dirname)
+        yield from self.client.mkdir(dirname)
         # etcdctl has no command to show that a key is a dir
         # it would raise if we try to make a file in a file:
         ctl.set(dirname + '/file', 42)
