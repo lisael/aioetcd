@@ -32,4 +32,27 @@ etcdctl set hello 42 # or wait 5 seconds to unlock
 (read the script to see what's going on)
 
 
+## Project status
+
+At the moment, the project is still a toy, as it was not battle tested, but it's kind of a big boy's toy. I think it's mature enough to start using it in the real life, but use it carefully. You may have to fork it to fit your needs and expectations (PR, please!).
+
+### Planed features
+
+1. SSL client auth
+2. chrooted client (add a directory key prefix to each request )
+3. &lt;YOUR WANTED FEATURE HERE (and in an issue, please :) )>
+
+### Known bugs
+
+1. no known bugs
+   (which means that the tests **are** buggy)
+
+### Tests
+
+I didn't had time to write an etcd mock, so tests are only integration tests (it needs a working etcd on localhost).
+
+Coverage is about 60% (with emphasis on client.py, where all the gory details are)
+
+## I want to help! What can I do?
+
 Play, fork, hack and, most important, have fun!
