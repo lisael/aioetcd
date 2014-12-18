@@ -54,6 +54,7 @@ class TestRealClient(unittest.TestCase):
     def setUp(self):
         self.loop = asyncio.get_event_loop()
         self.client = Client(loop=self.loop)
+        self.async_results = {}
 
     def test_leader(self):
         leader = self.loop.run_until_complete(self.client.leader())
@@ -123,6 +124,77 @@ class TestRealClient(unittest.TestCase):
     def test_delete(self):
         self.loop.run_until_complete(self._test_delete())
 
+    @asyncio.coroutine
+    def _watcher(self, key, index=None, timeout=None):
+        yield from self.client.watch(key, index, timeout)
+        self.async_results[key] = True
+
+    @asyncio.coroutine
+    def _test_watch(self):
+        ctl = EtcdController()
+        key = 'test_watch'
+        yield from ctl.set(key, 42)
+
+        # test a single key
+        self.async_results[key] = False
+        self.loop.create_task(self._watcher(key))
+        for i in range(42):
+            yield from asyncio.sleep(0.02)
+            self.assertFalse(self.async_results[key])
+        yield from ctl.set(key, 42)
+        yield from asyncio.sleep(0.001)
+        self.assertTrue(self.async_results[key])
+
+        # test with a wait index
+        self.async_results[key] = False
+        node = yield from self.client.get(key)
+        self.loop.create_task(self._watcher(key, node.modifiedIndex + 2))
+        yield from asyncio.sleep(0.001)
+        yield from ctl.set(key, 42)
+        yield from asyncio.sleep(0.001)
+        # index is not reached yet, it should not trigger
+        self.assertFalse(self.async_results[key])
+        yield from ctl.set(key, 42)
+        yield from asyncio.sleep(0.001)
+        self.assertTrue(self.async_results[key])
+
+        # test timeout
+        self.async_results[key] = False
+        import time
+        start = time.time()
+        with self.assertRaises(asyncio.TimeoutError):
+            yield from self._watcher(key, timeout=0.2)
+        self.assertEquals(int((time.time() - start) * 10), 2)
+        self.assertFalse(self.async_results[key])
+
+    @asyncio.coroutine
+    def _iterator_watcher(self, key):
+        self.async_results[key] = []
+        it = yield from self.client.watch_iterator(key)
+        for w in it:
+            resp = yield from w
+            self.async_results[key].append(resp.value)
+            if resp.value == '3':
+                break
+
+    @asyncio.coroutine
+    def _test_watch_iterator(self):
+        ctl = EtcdController()
+        key = 'test_iterwatch'
+        yield from ctl.set(key, 42)
+
+        # test a single key
+        self.async_results[key] = False
+        self.loop.create_task(self._iterator_watcher(key))
+        yield from asyncio.sleep(0.001)
+        for i in range(10):
+            yield from ctl.set(key, i)
+        yield from asyncio.sleep(0.001)
+        self.assertEquals(self.async_results[key], ['0', '1', '2', '3'])
+
+    def test_watch_iterator(self):
+        self.loop.run_until_complete(self._test_watch_iterator())
+
 
 class TestNodes(unittest.TestCase):
     def setUp(self):
@@ -148,6 +220,7 @@ class TestNodes(unittest.TestCase):
         changed = yield from node.changed()
         self.assertFalse(changed)
         val = yield from ctl.set(key, 'changed')
+        yield from asyncio.sleep(0.01)
         changed = yield from node.changed()
         self.assertTrue(changed)
         val = yield from self.client.get_value(key)
@@ -168,3 +241,13 @@ class TestNodes(unittest.TestCase):
 
     def test_update(self):
         self.loop.run_until_complete(self._test_update())
+
+    @asyncio.coroutine
+    def _test_prev_node(self):
+        key = 'test_prev'
+        yield from self.client.set(key, "orig")
+        node2 = yield from self.client.set(key, "changed")
+        self.assertEquals(node2.value, "changed")
+
+    def test_prev_node(self):
+        self.loop.run_until_complete(self._test_prev_node())
