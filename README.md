@@ -9,14 +9,17 @@ Asyncio version of https://github.com/jplana/python-etcd
 
 ## Quick start
 
-Install etcd and etcdctl ( https://github.com/coreos/etcd/blob/master/README.md )
+Install etcd and etcdctl https://github.com/coreos/etcd/blob/master/README.md
+(TL;DR? Have a look at `install` section in .travis.yml)
 
 ```
-etcd &
-etcdctl set hop 42
-git clone https://github.com/lisael/aioetcd.git
 virtualenv --python=python3.4 aioetcd
 cd aioetcd
+git clone https://github.com/lisael/aioetcd.git
+cd aioetcd
+make vtest # this runs and stops an etcd instance on default ports 4001 and 7001
+etcd &
+etcdctl set hop 42
 pip install .
 python3.4 example/simple_client.py 
 ```
