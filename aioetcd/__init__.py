@@ -41,7 +41,7 @@ class Node:
     @property
     def prev_node(self):
         if isinstance(self._prev_node, dict):
-            self._prev_node = Node(**self.prevNode)
+            self._prev_node = Node(**self._prev_node)
         return self._prev_node
 
     @asyncio.coroutine
