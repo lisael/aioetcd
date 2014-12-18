@@ -64,8 +64,14 @@ class Client:
         :returns: str value of the key
         :raises: KeyError if the key doesn't exists.
         """
-        # TODO return a byte string
         res = yield from self.read(key)
+        return res
+
+    @asyncio.coroutine
+    def get_value(self, key):
+        res = yield from self.read(key)
+        if res.value is None:
+            raise aioetcd.EtcdException(102)
         return res.value
 
     @asyncio.coroutine
@@ -309,6 +315,8 @@ class Client:
     def _result_from_response(self, response, timeout=None, loop=None):
         """ Creates an EtcdResult from json dictionary """
         params = yield from self._decode_response(response, timeout, loop)
+        if 'errorCode' in params:
+            raise aioetcd.EtcdException(params['errorCode'])
         return aioetcd.Node(**params)
 
     @asyncio.coroutine

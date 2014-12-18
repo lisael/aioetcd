@@ -9,14 +9,14 @@ class Node:
         'ttl': None,
         'modifiedIndex': None,
         'createdIndex': None,
-        'newKey': False,
-        'dir': False,
+        '_prev_node': None
     }
     """Base class for etcd nodes. Cannot be instanciated"""
     def __new__(cls, **kwargs):
         # sometimes the write response of a dir is bogus, we have to check
         # the prevNode to be sure it's not a dir
-        if kwargs.pop("dir", False) or kwargs.get(
+        node = kwargs.get('node', {})
+        if node.pop("dir", False) or kwargs.get(
                 "prevNode", {}).get("dir", False):
             return super(Node, cls).__new__(DirNode)
         else:
@@ -28,9 +28,9 @@ class Node:
 
     def _update_from_dict(self, **kwargs):
         node = kwargs.pop('node', {})
+        self._prev_node = kwargs.pop('prevNode', None)
         self.__dict__.update(kwargs)
         self.__dict__.update(node)
-        self._prev_node = False
 
     @asyncio.coroutine
     def update(self):
@@ -40,11 +40,8 @@ class Node:
 
     @property
     def prev_node(self):
-        if self._prev_node is False:
-            if self.prevNode:
-                self._prev_node = Node(**self.prevNode)
-            else:
-                self._prev_node = None
+        if isinstance(self._prev_node, dict):
+            self._prev_node = Node(**self.prevNode)
         return self._prev_node
 
     @asyncio.coroutine
@@ -68,7 +65,7 @@ class DirNode(Node):
 
     def __init__(self, **kwargs):
         super(DirNode, self).__init__(**kwargs)
-        self._children = kwargs.get()
+        self._children = kwargs.get("nodes", [])
 
     def _update_from_dict(self, **kwargs):
         kwargs['_children'] = kwargs.pop('nodes', None)
@@ -90,11 +87,9 @@ class DirNode(Node):
 
 
 class EtcdException(Exception):
-
     """
     Generic Etcd Exception.
     """
-
     pass
 
 
